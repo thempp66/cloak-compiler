@@ -205,6 +205,44 @@ class PrivacyPolicy(json.JSONEncoder):
     def sort_states(self):
         self.policy["states"].sort(key=lambda x: x["type"].find("mapping"))
 
+    def cal_slot(self):
+        slot = 0
+        bits_count = 0
+        for state in self.policy["states"]:
+            bits = self.get_bits(state["type"])
+            if bits_count + bits <= 256:
+                # to current slot
+                bits_count += bits
+            else:
+                # to next slot
+                slot += 1
+                bits_count = bits
+            state["slot"] = slot
+
+    def get_bits(self, type):
+        if type == "uint":
+            return 256
+        elif type == "int":
+            return 256
+        elif type == "bytes":
+            return 256
+        elif type.find("[]") >= 0:
+            return 256
+        elif type == "bool":
+            return 8
+        elif type == "address":
+            return 160
+        elif type[:4] == "uint":
+            return int(type[4:])
+        elif type[:3] == "int":
+            return int(type[3:])
+        elif type[:5] == "bytes":
+            return int(type[5:]) * 8
+        else:
+            return 256
+    
+
+
 
 # replace type name with concrete type name for computing function function selector
 class ConcreteTypeNameVisitor(ast.AstVisitor):
